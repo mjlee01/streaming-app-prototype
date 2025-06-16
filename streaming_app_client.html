@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StreamFlix - Personalized Streaming</title>
+    <style>
+        :root {
+            --primary-bg: #121212;
+            --secondary-bg: #1f1f1f;
+            --accent-color: #e50914;
+            --text-primary: #ffffff;
+            --text-secondary: #b3b3b3;
+            --card-bg: #2a2a2a;
+            --gradient-overlay: linear-gradient(0deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 100%);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+        }
+        
+        body {
+            background-color: var(--primary-bg);
+            color: var(--text-primary);
+            height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        .container {
+            max-width: 414px; /* iPhone 12/13 Pro Max width */
+            height: 896px; /* iPhone 12/13 Pro Max height */
+            margin: 0 auto;
+            background-color: var(--primary-bg);
+            position: relative;
+            overflow-y: auto;
+            overflow-x: hidden;
+            border-radius: 40px;
+            border: 10px solid #000;
+            box-shadow: 0 0 50px rgba(0,0,0,0.5);
+        }
+        
+        .status-bar {
+            height: 44px;
+            background-color: var(--primary-bg);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+            font-size: 12px;
+        }
+        
+        .status-bar .time {
+            font-weight: bold;
+        }
+        
+        .status-bar .icons {
+            display: flex;
+            gap: 5px;
+        }
+        
+        .search-bar {
+            padding: 15px 20px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            background-color: var(--primary-bg);
+        }
+        
+        .search-input {
+            background-color: var(--secondary-bg);
+            border-radius: 20px;
+            padding: 10px 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .search-input svg {
+            width: 18px;
+            height: 18px;
+            fill: var(--text-secondary);
+        }
+        
+        .search-input input {
+            background: transparent;
+            border: none;
+            color: var(--text-primary);
+            font-size: 16px;
+            width: 100%;
+            outline: none;
+        }
+        
+        .search-input input::placeholder {
+            color: var(--text-secondary);
+        }
+        
+        .content-section {
+            padding: 0 20px 20px;
+        }
+        
+        .section-title {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .section-title.personalized {
+            color: var(--accent-color);
+        }
+        
+        .section-title svg {
+            width: 20px;
+            height: 20px;
+            fill: var(--accent-color);
+        }
+        
+        .content-row {
+            display: flex;
+            gap: 12px;
+            overflow-x: auto;
+            padding-bottom: 15px;
+            scrollbar-width: none; /* Firefox */
+        }
+        
+        .content-row::-webkit-scrollbar {
+            display: none; /* Chrome, Safari, Opera */
+        }
+        
+        .content-card {
+            flex: 0 0 auto;
+            width: 140px;
+            border-radius: 8px;
+            overflow: hidden;
+            position: relative;
+            transition: transform 0.3s ease;
+        }
+        
+        .content-card:active {
+            transform: scale(0.95);
+        }
+        
+        .content-card img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+        }
+        
+        .content-card .info {
+            padding: 10px;
+            background-color: var(--card-bg);
+        }
+        
+        .content-card .title {
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 5px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .content-card .reason {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+        
+        .continue-card {
+            flex: 0 0 auto;
+            width: 200px;
+            border-radius: 8px;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .continue-card img {
+            width: 100%;
+            height: 110px;
+            object-fit: cover;
+        }
+        
+        .continue-card .progress-bar {
+            height: 3px;
+            background-color: var(--secondary-bg);
+            position: relative;
+        }
+        
+        .continue-card .progress {
+            height: 100%;
+            background-color: var(--accent-color);
+            width: 65%; /* Simulated progress */
+        }
+        
+        .continue-card .info {
+            padding: 8px;
+            background-color: var(--card-bg);
+        }
+        
+        .continue-card .title {
+            font-size: 14px;
+            font-weight: bold;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .continue-card .episode {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+        
+        .nav-bar {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            max-width: 394px; /* Account for iPhone border */
+            background-color: var(--secondary-bg);
+            display: flex;
+            justify-content: space-around;
+            padding: 15px 0;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .nav-item svg {
+            width: 24px;
+            height: 24px;
+            fill: var(--text-secondary);
+        }
+        
+        .nav-item.active svg {
+            fill: var(--text-primary);
+        }
+        
+        .nav-item span {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+        
+        .nav-item.active span {
+            color: var(--text-primary);
+        }
+        
+        /* Modal for content detail */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.9);
+            z-index: 100;
+            display: none;
+            flex-direction: column;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        .modal.active {
+            display: flex;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .modal-header {
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .close-btn {
+            background: none;
+            border: none;
+            color: var(--text-primary);
+            font-size: 24px;
+            cursor: pointer;
+        }
+        
+        .modal-content {
+            flex: 1;
+            overflow-y: auto;
+        }
+        
+        .hero-image {
+            position: relative;
+            height: 250px;
+        }
+        
+        .hero-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .hero-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--gradient-overlay);
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            padding: 20px;
+        }
+        
+        .content-title {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .content-meta {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+        
+        .content-description {
+            padding: 20px;
+            font-size: 14px;
+            line-height: 1.5;
+            color: var(--text-secondary);
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            padding: 0 20px;
+        }
+        
+        .play-btn {
+            flex: 1;
+            background-color: var(--accent-color);
+            color: var(--text-primary);
+            border: none;
+            padding: 12px;
+            border-radius: 5px;
+            font-weight: bold;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .action-btn {
+            background-color: var(--secondary-bg);
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .action-btn svg {
+            width: 20px;
+            height: 20px;
+            fill: var(--text-primary);
+        }
+        
+        .retention-banner {
+            margin: 20px;
+            padding: 15px;
+            background-color: rgba(229, 9, 20, 0.2);
+            border-left: 3px solid var(--accent-color);
+            border-radius: 5px;
+        }
+        
+        .retention-banner h3 {
+            font-size: 16px;
+            margin-bottom: 5px;
+        }
+        
+        .retention-banner p {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+        
+        .retention-banner button {
+            background-color: transparent;
+            border: 1px solid var(--accent-color);
+            color: var(--accent-color);
+            padding: 8px 15px;
+            border-radius: 5px;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+        
+        /* Churn risk indicator */
+        .churn-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            background-color: rgba(229, 9, 20, 0.1);
+            padding: 3px 8px;
+            border-radius: 12px;
+            margin-left: 10px;
+        }
+        
+        .churn-indicator svg {
+            width: 14px;
+            height: 14px;
+            fill: var(--accent-color);
+        }
+        
+        .churn-indicator span {
+            font-size: 12px;
+            color: var(--accent-color);
+            font-weight: normal;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Status Bar -->
+        <div class="status-bar">
+            <div class="time">9:41</div>
+            <div class="icons">
+                <span>📶</span>
+                <span>📡</span>
+                <span>🔋</span>
+            </div>
+        </div>
+        
+        <!-- Search Bar -->
+        <div class="search-bar">
+            <div class="search-input">
+                <svg viewBox="0 0 24 24">
+                    <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+                </svg>
+                <input type="text" placeholder="Search for movies, shows...">
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="content-section">
+            <!-- Recommended For You Section -->
+            <div class="section-title personalized">
+                <span>Recommended For You</span>
+                <div class="churn-indicator">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+                    </svg>
+                    <span>Handpicked <br> For You</span>
+                </div>
+            </div>
+            
+            <div class="content-row">
+                <div class="content-card" onclick="openModal('stranger')">
+                    <!-- <img src="data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='200' viewBox='0 0 140 200'%3E%3Crect width='140' height='200' fill='%23300'/%3E%3Ctext x='50%25' y='50%25' font-family='Arial' font-size='18' fill='%23FFF' text-anchor='middle' dominant-baseline='middle'%3EStranger Things%3C/text%3E%3C/svg%3E" alt="Stranger Things"> -->
+                    <img src="/pic/Stringer Things 4.jpg" alt="Stranger Things">
+                    <div class="info">
+                        <div class="title">Stranger Things</div>
+                        <div class="reason">Because you watched Dark</div>
+                    </div>
+                </div>
+                
+                <div class="content-card">
+                    <img src="/pic/The Crown.jpg" alt="The Crown">
+                    <!-- <img src="data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='200' viewBox='0 0 140 200'%3E%3Crect width='140' height='200' fill='%23003'/%3E%3Ctext x='50%25' y='50%25' font-family='Arial' font-size='18' fill='%23FFF' text-anchor='middle' dominant-baseline='middle'%3EThe Crown%3C/text%3E%3C/svg%3E" alt="The Crown"> -->
+                    <div class="info">
+                        <div class="title">The Crown</div>
+                        <div class="reason">Based on your interest in Drama</div>
+                    </div>
+                </div>
+                
+                <div class="content-card">
+                    <!-- <img src="data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='200' viewBox='0 0 140 200'%3E%3Crect width='140' height='200' fill='%23030'/%3E%3Ctext x='50%25' y='50%25' font-family='Arial' font-size='18' fill='%23FFF' text-anchor='middle' dominant-baseline='middle'%3EBridgerton%3C/text%3E%3C/svg%3E" alt="Bridgerton"> -->
+                    <img src="/pic/Bridgerton.jpg" alt="Bridgerton">
+                    <div class="info">
+                        <div class="title">Bridgerton</div>
+                        <div class="reason">95% match for you</div>
+                    </div>
+                </div>
+                
+                <div class="content-card">
+                    <!-- <img src="data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='200' viewBox='0 0 140 200'%3E%3Crect width='140' height='200' fill='%23330'/%3E%3Ctext x='50%25' y='50%25' font-family='Arial' font-size='18' fill='%23FFF' text-anchor='middle' dominant-baseline='middle'%3ESquid Game%3C/text%3E%3C/svg%3E" alt="Squid Game"> -->
+                    <img src="/pic/Squid Game.jpg" alt="Squid Game">
+                    <div class="info">
+                        <div class="title">Squid Game</div>
+                        <div class="reason">Trending in your region</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Continue Watching Section -->
+        <div class="content-section">
+            <div class="section-title">
+                <span>Continue Watching</span>
+            </div>
+            
+            <div class="content-row">
+                <div class="continue-card">
+                    <!-- <img src="data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='110' viewBox='0 0 200 110'%3E%3Crect width='200' height='110' fill='%23033'/%3E%3Ctext x='50%25' y='50%25' font-family='Arial' font-size='18' fill='%23FFF' text-anchor='middle' dominant-baseline='middle'%3EWednesday%3C/text%3E%3C/svg%3E" alt="Wednesday"> -->
+                    <img src="/pic/hWednesday.jpg" alt="Wednesday">
+                    <div class="progress-bar">
+                        <div class="progress"></div>
+                    </div>
+                    <div class="info">
+                        <div class="title">Wednesday</div>
+                        <div class="episode">S1:E4 - 18m left</div>
+                    </div>
+                </div>
+                
+                <div class="continue-card">
+                    <!-- <img src="data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='110' viewBox='0 0 200 110'%3E%3Crect width='200' height='110' fill='%23303'/%3E%3Ctext x='50%25' y='50%25' font-family='Arial' font-size='18' fill='%23FFF' text-anchor='middle' dominant-baseline='middle'%3EThe Witcher%3C/text%3E%3C/svg%3E" alt="The Witcher"> -->
+                    <img src="/pic/hThe Witcher.jpg" alt="The Witcher">
+                    <div class="progress-bar">
+                        <div class="progress" style="width: 30%;"></div>
+                    </div>
+                    <div class="info">
+                        <div class="title">The Witcher</div>
+                        <div class="episode">S2:E1 - 42m left</div>
+                    </div>
+                </div>
+                
+                <div class="continue-card">
+                    <!-- <img src="data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='110' viewBox='0 0 200 110'%3E%3Crect width='200' height='110' fill='%23330'/%3E%3Ctext x='50%25' y='50%25' font-family='Arial' font-size='18' fill='%23FFF' text-anchor='middle' dominant-baseline='middle'%3ELoki%3C/text%3E%3C/svg%3E" alt="Loki"> -->
+                    <img src="/pic/hLoki.jpg" alt="Loki">
+                    <div class="progress-bar">
+                        <div class="progress" style="width: 80%;"></div>
+                    </div>
+                    <div class="info">
+                        <div class="title">Loki</div>
+                        <div class="episode">S1:E6 - 8m left</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Trending Now Section with Churn Risk Indicator -->
+        <div class="content-section">
+            <div class="section-title">
+                <span>Trending Now: What You Might Miss</span>
+            </div>
+            
+            <div class="content-row">
+                <div class="content-card">
+                    <!-- <img src="data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='200' viewBox='0 0 140 200'%3E%3Crect width='140' height='200' fill='%23303'/%3E%3Ctext x='50%25' y='50%25' font-family='Arial' font-size='18' fill='%23FFF' text-anchor='middle' dominant-baseline='middle'%3EWandaVision%3C/text%3E%3C/svg%3E" alt="WandaVision"> -->
+                    <img src="/pic/WandaVision.jpg" alt="WandaVision">
+                    <div class="info">
+                        <div class="title">WandaVision</div>
+                        <div class="reason">Final season available</div>
+                    </div>
+                </div>
+                
+                <div class="content-card">
+                    <!-- <img src="data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='200' viewBox='0 0 140 200'%3E%3Crect width='140' height='200' fill='%23033'/%3E%3Ctext x='50%25' y='50%25' font-family='Arial' font-size='18' fill='%23FFF' text-anchor='middle' dominant-baseline='middle'%3EThe Last of Us%3C/text%3E%3C/svg%3E" alt="The Last of Us"> -->
+                    <img src="/pic/The Last of Us.jpeg" alt="The Last of Us">
+                    <div class="info">
+                        <div class="title">The Last of Us</div>
+                        <div class="reason">New episode weekly</div>
+                    </div>
+                </div>
+                
+                <div class="content-card">
+                    <!-- <img src="data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='200' viewBox='0 0 140 200'%3E%3Crect width='140' height='200' fill='%23330'/%3E%3Ctext x='50%25' y='50%25' font-family='Arial' font-size='18' fill='%23FFF' text-anchor='middle' dominant-baseline='middle'%3EHouse of the Dragon%3C/text%3E%3C/svg%3E" alt="House of the Dragon"> -->
+                    <img src="/pic/House of the Dragon.jpeg" alt="House of the Dragon">
+                    <div class="info">
+                        <div class="title">House of the Dragon</div>
+                        <div class="reason">Season finale tomorrow</div>
+                    </div>
+                </div>
+                
+                <div class="content-card">
+                    <!-- <img src="data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='200' viewBox='0 0 140 200'%3E%3Crect width='140' height='200' fill='%23300'/%3E%3Ctext x='50%25' y='50%25' font-family='Arial' font-size='18' fill='%23FFF' text-anchor='middle' dominant-baseline='middle'%3EThe Mandalorian%3C/text%3E%3C/svg%3E" alt="The Mandalorian"> -->
+                    <img src="/pic/The Mandalorian.jpg" alt="The Mandalorian">
+                    <div class="info">
+                        <div class="title">The Mandalorian</div>
+                        <div class="reason">New season coming soon</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Navigation Bar -->
+        <div class="nav-bar">
+            <div class="nav-item active">
+                <svg viewBox="0 0 24 24">
+                    <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
+                </svg>
+                <span>Home</span>
+            </div>
+            
+            <div class="nav-item">
+                <svg viewBox="0 0 24 24">
+                    <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+                </svg>
+                <span>Search</span>
+            </div>
+            
+            <div class="nav-item">
+                <svg viewBox="0 0 24 24">
+                    <path d="M14 10H2v2h12v-2zm0-4H2v2h12V6zm4 8v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zM2 16h8v-2H2v2z"/>
+                </svg>
+                <span>My List</span>
+            </div>
+            
+            <div class="nav-item">
+                <svg viewBox="0 0 24 24">
+                    <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                </svg>
+                <span>Profile</span>
+            </div>
+        </div>
+        
+        <!-- Content Detail Modal -->
+        <div class="modal" id="strangerModal">
+            <div class="modal-header">
+                <button class="close-btn" onclick="closeModal()">&times;</button>
+            </div>
+            
+            <div class="modal-content">
+                <div class="hero-image">
+                    <img src="data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='414' height='250' viewBox='0 0 414 250'%3E%3Crect width='414' height='250' fill='%23300'/%3E%3Ctext x='50%25' y='50%25' font-family='Arial' font-size='24' fill='%23FFF' text-anchor='middle' dominant-baseline='middle'%3EStranger Things%3C/text%3E%3C/svg%3E" alt="Stranger Things">
+                    <div class="hero-overlay">
+                        <div class="content-title">Stranger Things</div>
+                        <div class="content-meta">
+                            <span>2016</span>
+                            <span>•</span>
+                            <span>TV-14</span>
+                            <span>•</span>
+                            <span>4 Seasons</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="action-buttons">
+                    <button class="play-btn">
+                        <svg viewBox="0 0 24 24" width="24" height="24" fill="#fff">
+                            <path d="M8 5v14l11-7z"/>
+                        </svg>
+                        Play
+                    </button>
+                    
+                    <button class="action-btn">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M14 10H2v2h12v-2zm0-4H2v2h12V6zm4 8v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zM2 16h8v-2H2v2z"/>
+                        </svg>
+                    </button>
+                </div>
+                
+                <div class="content-description">
+                    When a young boy vanishes, a small town uncovers a mystery involving secret experiments, terrifying supernatural forces, and one strange little girl.
+                </div>
+                
+                <!-- Retention Banner -->
+                <div class="retention-banner">
+                    <h3>Free Preview Available!</h3>
+                    <p>We think you'll love this series based on your recent activity. Watch the first episode for free, no commitment required.</p>
+                    <button>Watch Free Episode</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        function openModal(id) {
+            document.getElementById(id + 'Modal').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+        
+        function closeModal() {
+            document.querySelectorAll('.modal').forEach(modal => {
+                modal.classList.remove('active');
+            });
+            document.body.style.overflow = 'auto';
+        }
+    </script>
+</body>
+</html>

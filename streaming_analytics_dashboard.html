@@ -1,0 +1,1118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StreamFlix Analytics Dashboard</title>
+    <style>
+        :root {
+            --primary-bg: #121212;
+            --secondary-bg: #1f1f1f;
+            --card-bg: #2a2a2a;
+            --accent-color: #4285f4;
+            --success-color: #0f9d58;
+            --warning-color: #f4b400;
+            --danger-color: #db4437;
+            --text-primary: #ffffff;
+            --text-secondary: #b3b3b3;
+            --border-color: #3a3a3a;
+            --chart-grid: #333333;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+        }
+        
+        body {
+            background-color: var(--primary-bg);
+            color: var(--text-primary);
+            height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        .container {
+            max-width: 414px; /* iPhone 12/13 Pro Max width */
+            height: 896px; /* iPhone 12/13 Pro Max height */
+            margin: 0 auto;
+            background-color: var(--primary-bg);
+            position: relative;
+            overflow-y: auto;
+            overflow-x: hidden;
+            border-radius: 40px;
+            border: 10px solid #000;
+            box-shadow: 0 0 50px rgba(0,0,0,0.5);
+            
+            /* Hide scrollbar by default */
+            &::-webkit-scrollbar {
+                width: 0;
+                background: transparent;
+                transition: width 0.3s;
+            }
+            
+            /* Show scrollbar when scrolling (for Webkit browsers) */
+            &:hover::-webkit-scrollbar,
+            &:active::-webkit-scrollbar {
+                width: 5px;
+                background: var(--secondary-bg);
+            }
+            
+            &::-webkit-scrollbar-thumb {
+                background: var(--accent-color);
+                border-radius: 10px;
+            }
+            
+            /* For Firefox */
+            scrollbar-width: none;
+            
+            /* For IE and Edge */
+            -ms-overflow-style: none;
+        }
+        
+        .status-bar {
+            height: 44px;
+            background-color: var(--primary-bg);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+            font-size: 12px;
+        }
+        
+        .status-bar .time {
+            font-weight: bold;
+        }
+        
+        .status-bar .icons {
+            display: flex;
+            gap: 5px;
+        }
+        
+        .header {
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .header h1 {
+            font-size: 20px;
+            font-weight: bold;
+        }
+        
+        .header .date-filter {
+            background-color: var(--secondary-bg);
+            border-radius: 20px;
+            padding: 8px 12px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .header .date-filter svg {
+            width: 14px;
+            height: 14px;
+            fill: var(--text-secondary);
+        }
+        
+        .tab-navigation {
+            display: flex;
+            border-bottom: 1px solid var(--border-color);
+            background-color: var(--primary-bg);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        
+        .tab {
+            flex: 1;
+            text-align: center;
+            padding: 15px 0;
+            font-size: 14px;
+            color: var(--text-secondary);
+            position: relative;
+            cursor: pointer;
+        }
+        
+        .tab.active {
+            color: var(--text-primary);
+            font-weight: bold;
+        }
+        
+        .tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 25%;
+            width: 50%;
+            height: 3px;
+            background-color: var(--accent-color);
+            border-radius: 3px 3px 0 0;
+        }
+        
+        .dashboard-content {
+            padding: 20px;
+        }
+        
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .kpi-card {
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .kpi-title {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-bottom: 5px;
+        }
+        
+        .kpi-value {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .kpi-trend {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 12px;
+        }
+        
+        .kpi-trend.positive {
+            color: var(--success-color);
+        }
+        
+        .kpi-trend.negative {
+            color: var(--danger-color);
+        }
+        
+        .kpi-trend svg {
+            width: 14px;
+            height: 14px;
+            fill: currentColor;
+        }
+        
+        .chart-card {
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .chart-title {
+            font-size: 16px;
+            font-weight: bold;
+        }
+        
+        .chart-legend {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+        
+        .legend-color {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+        
+        .chart-container {
+            height: 200px;
+            position: relative;
+        }
+        
+        /* SVG Charts */
+        .line-chart {
+            width: 100%;
+            height: 100%;
+        }
+        
+        .line-chart .grid-line {
+            stroke: var(--chart-grid);
+            stroke-width: 1;
+            stroke-dasharray: 3,3;
+        }
+        
+        .line-chart .axis-label {
+            fill: var(--text-secondary);
+            font-size: 10px;
+        }
+        
+        .line-chart .data-line {
+            fill: none;
+            stroke-width: 2;
+        }
+        
+        .line-chart .data-point {
+            fill: var(--primary-bg);
+            stroke-width: 2;
+        }
+        
+        .bar-chart {
+            width: 100%;
+            height: 100%;
+        }
+        
+        .bar-chart .bar {
+            rx: 3;
+            ry: 3;
+        }
+        
+        .bar-chart .axis-label {
+            fill: var(--text-secondary);
+            font-size: 10px;
+        }
+        
+        .donut-chart {
+            width: 100%;
+            height: 100%;
+        }
+        
+        .donut-chart .donut-segment {
+            stroke-width: 25;
+            fill: none;
+        }
+        
+        .donut-chart .donut-center {
+            fill: var(--card-bg);
+        }
+        
+        .donut-chart .donut-label {
+            fill: var(--text-primary);
+            font-size: 14px;
+            font-weight: bold;
+            text-anchor: middle;
+            dominant-baseline: middle;
+        }
+        
+        .donut-chart .donut-sublabel {
+            fill: var(--text-secondary);
+            font-size: 10px;
+            text-anchor: middle;
+            dominant-baseline: middle;
+        }
+        
+        .segment-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        
+        .segment-table th {
+            text-align: left;
+            font-size: 12px;
+            color: var(--text-secondary);
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .segment-table td {
+            padding: 8px 0;
+            font-size: 14px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .segment-table .segment-color {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+        }
+        
+        .segment-table .segment-value {
+            text-align: right;
+            font-weight: bold;
+        }
+        
+        .nav-bar {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            max-width: 394px; /* Account for iPhone border */
+            background-color: var(--secondary-bg);
+            display: flex;
+            justify-content: space-around;
+            padding: 15px 0;
+            border-top: 1px solid var(--border-color);
+        }
+        
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .nav-item svg {
+            width: 24px;
+            height: 24px;
+            fill: var(--text-secondary);
+        }
+        
+        .nav-item.active svg {
+            fill: var(--accent-color);
+        }
+        
+        .nav-item span {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+        
+        .nav-item.active span {
+            color: var(--accent-color);
+        }
+        
+        /* Modal for detailed view */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.9);
+            z-index: 100;
+            display: none;
+            flex-direction: column;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        .modal.active {
+            display: flex;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .modal-header {
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .modal-title {
+            font-size: 18px;
+            font-weight: bold;
+        }
+        
+        .close-btn {
+            background: none;
+            border: none;
+            color: var(--text-primary);
+            font-size: 24px;
+            cursor: pointer;
+        }
+        
+        .modal-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0 20px 20px;
+        }
+        
+        .filter-section {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            overflow-x: auto;
+            padding-bottom: 5px;
+        }
+        
+        .filter-chip {
+            background-color: var(--secondary-bg);
+            border-radius: 20px;
+            padding: 8px 12px;
+            font-size: 12px;
+            white-space: nowrap;
+        }
+        
+        .filter-chip.active {
+            background-color: var(--accent-color);
+            color: white;
+        }
+        
+        .detail-chart-container {
+            height: 250px;
+            margin-bottom: 20px;
+        }
+        
+        .detail-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .detail-table th {
+            text-align: left;
+            font-size: 12px;
+            color: var(--text-secondary);
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .detail-table td {
+            padding: 12px 0;
+            font-size: 14px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .detail-table .value-cell {
+            text-align: right;
+            font-weight: bold;
+        }
+        
+        .detail-table .trend-cell {
+            text-align: right;
+        }
+        
+        .detail-table .trend-positive {
+            color: var(--success-color);
+        }
+        
+        .detail-table .trend-negative {
+            color: var(--danger-color);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Status Bar -->
+        <div class="status-bar">
+            <div class="time">9:41</div>
+            <div class="icons">
+                <span>📶</span>
+                <span>📡</span>
+                <span>🔋</span>
+            </div>
+        </div>
+        
+        <!-- Header -->
+        <div class="header">
+            <h1>Analytics Dashboard</h1>
+            <div class="date-filter">
+                <svg viewBox="0 0 24 24">
+                    <path d="M9 11H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2zm2-7h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11z"/>
+                </svg>
+                <span>Last 30 Days</span>
+            </div>
+        </div>
+        
+        <!-- Tab Navigation -->
+        <div class="tab-navigation">
+            <div class="tab active">Overview</div>
+            <div class="tab">Churn</div>
+            <div class="tab">Engagement</div>
+            <div class="tab">Personalization</div>
+        </div>
+        
+        <!-- Dashboard Content -->
+        <div class="dashboard-content">
+            <!-- KPI Grid -->
+            <div class="kpi-grid">
+                <div class="kpi-card">
+                    <div class="kpi-title">Churn Rate</div>
+                    <div class="kpi-value">4.2%</div>
+                    <div class="kpi-trend positive">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M7 14l5-5 5 5z"/>
+                        </svg>
+                        <span>0.8% vs last month</span>
+                    </div>
+                </div>
+                
+                <div class="kpi-card">
+                    <div class="kpi-title">Retention Rate</div>
+                    <div class="kpi-value">95.8%</div>
+                    <div class="kpi-trend positive">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M7 14l5-5 5 5z"/>
+                        </svg>
+                        <span>0.8% vs last month</span>
+                    </div>
+                </div>
+                
+                <div class="kpi-card">
+                    <div class="kpi-title">Engagement Score</div>
+                    <div class="kpi-value">78.3</div>
+                    <div class="kpi-trend positive">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M7 14l5-5 5 5z"/>
+                        </svg>
+                        <span>2.1 vs last month</span>
+                    </div>
+                </div>
+                
+                <div class="kpi-card">
+                    <div class="kpi-title">Prediction Accuracy</div>
+                    <div class="kpi-value">87.5%</div>
+                    <div class="kpi-trend positive">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M7 14l5-5 5 5z"/>
+                        </svg>
+                        <span>1.2% vs last month</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Churn Trend Chart -->
+            <div class="chart-card" onclick="openModal('churnTrend')">
+                <div class="chart-header">
+                    <div class="chart-title">Churn Rate Trend</div>
+                    <div class="chart-legend">
+                        <div class="legend-item">
+                            <div class="legend-color" style="background-color: var(--danger-color);"></div>
+                            <span>Actual</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background-color: var(--warning-color);"></div>
+                            <span>Predicted</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="chart-container">
+                    <svg class="line-chart" viewBox="0 0 340 200" preserveAspectRatio="none">
+                        <!-- Grid Lines -->
+                        <line class="grid-line" x1="0" y1="0" x2="340" y2="0"></line>
+                        <line class="grid-line" x1="0" y1="50" x2="340" y2="50"></line>
+                        <line class="grid-line" x1="0" y1="100" x2="340" y2="100"></line>
+                        <line class="grid-line" x1="0" y1="150" x2="340" y2="150"></line>
+                        <line class="grid-line" x1="0" y1="200" x2="340" y2="200"></line>
+                        
+                        <!-- X-Axis Labels -->
+                        <text class="axis-label" x="0" y="195">Apr 1</text>
+                        <text class="axis-label" x="85" y="195">Apr 8</text>
+                        <text class="axis-label" x="170" y="195">Apr 15</text>
+                        <text class="axis-label" x="255" y="195">Apr 22</text>
+                        <text class="axis-label" x="340" y="195" text-anchor="end">Apr 30</text>
+                        
+                        <!-- Y-Axis Labels -->
+                        <text class="axis-label" x="20" y="10">6%</text>
+                        <text class="axis-label" x="20" y="60">5%</text>
+                        <text class="axis-label" x="20" y="110">4%</text>
+                        <text class="axis-label" x="20" y="160">3%</text>
+                        
+                        <!-- Actual Churn Line -->
+                        <path class="data-line" stroke="var(--danger-color)" d="M0,120 L34,110 L68,130 L102,125 L136,115 L170,105 L204,100 L238,90 L272,85 L306,80 L340,75"></path>
+                        
+                        <!-- Predicted Churn Line -->
+                        <path class="data-line" stroke="var(--warning-color)" d="M0,125 L34,115 L68,135 L102,130 L136,120 L170,110 L204,105 L238,95 L272,90 L306,85 L340,80"></path>
+                        
+                        <!-- Data Points for Actual -->
+                        <circle class="data-point" cx="0" cy="120" r="4" stroke="var(--danger-color)"></circle>
+                        <circle class="data-point" cx="34" cy="110" r="4" stroke="var(--danger-color)"></circle>
+                        <circle class="data-point" cx="68" cy="130" r="4" stroke="var(--danger-color)"></circle>
+                        <circle class="data-point" cx="102" cy="125" r="4" stroke="var(--danger-color)"></circle>
+                        <circle class="data-point" cx="136" cy="115" r="4" stroke="var(--danger-color)"></circle>
+                        <circle class="data-point" cx="170" cy="105" r="4" stroke="var(--danger-color)"></circle>
+                        <circle class="data-point" cx="204" cy="100" r="4" stroke="var(--danger-color)"></circle>
+                        <circle class="data-point" cx="238" cy="90" r="4" stroke="var(--danger-color)"></circle>
+                        <circle class="data-point" cx="272" cy="85" r="4" stroke="var(--danger-color)"></circle>
+                        <circle class="data-point" cx="306" cy="80" r="4" stroke="var(--danger-color)"></circle>
+                        <circle class="data-point" cx="340" cy="75" r="4" stroke="var(--danger-color)"></circle>
+                    </svg>
+                </div>
+            </div>
+            
+            <!-- Personalization Effectiveness -->
+            <div class="chart-card" onclick="openModal('personalization')">
+                <div class="chart-header">
+                    <div class="chart-title">Personalization Effectiveness</div>
+                </div>
+                
+                <div class="chart-container">
+                    <svg class="bar-chart" viewBox="0 0 340 200" preserveAspectRatio="none">
+                        <!-- Grid Lines -->
+                        <line class="grid-line" x1="0" y1="0" x2="340" y2="0"></line>
+                        <line class="grid-line" x1="0" y1="50" x2="340" y2="50"></line>
+                        <line class="grid-line" x1="0" y1="100" x2="340" y2="100"></line>
+                        <line class="grid-line" x1="0" y1="150" x2="340" y2="150"></line>
+                        <line class="grid-line" x1="0" y1="200" x2="340" y2="200"></line>
+                        
+                        <!-- Y-Axis Labels -->
+                        <text class="axis-label" x="25" y="10">100%</text>
+                        <text class="axis-label" x="25" y="60">75%</text>
+                        <text class="axis-label" x="25" y="110">50%</text>
+                        <text class="axis-label" x="25" y="160">25%</text>
+                        
+                        <!-- Bars -->
+                        <rect class="bar" x="50" y="80" width="40" height="120" fill="var(--accent-color)"></rect>
+                        <rect class="bar" x="120" y="120" width="40" height="80" fill="var(--accent-color)"></rect>
+                        <rect class="bar" x="190" y="40" width="40" height="160" fill="var(--accent-color)"></rect>
+                        <rect class="bar" x="260" y="100" width="40" height="100" fill="var(--accent-color)"></rect>
+                        
+                        <!-- X-Axis Labels -->
+                        <text class="axis-label" x="70" y="195" text-anchor="middle">CTR</text>
+                        <text class="axis-label" x="140" y="195" text-anchor="middle">Conversion</text>
+                        <text class="axis-label" x="210" y="195" text-anchor="middle">Satisfaction</text>
+                        <text class="axis-label" x="280" y="195" text-anchor="middle">Engagement</text>
+                    </svg>
+                </div>
+            </div>
+            
+            <!-- User Segmentation -->
+            <div class="chart-card" onclick="openModal('segmentation')">
+                <div class="chart-header">
+                    <div class="chart-title">Churn by User Segment</div>
+                </div>
+                
+                <div class="chart-container">
+                    <svg class="donut-chart" viewBox="0 0 200 200">
+                        <!-- Donut Segments -->
+                        <circle class="donut-center" cx="100" cy="100" r="70"></circle>
+                        
+                        <!-- Segment 1: Premium - 25% -->
+                        <circle class="donut-segment" cx="100" cy="100" r="80" stroke="var(--accent-color)"
+                                stroke-dasharray="157 471" stroke-dashoffset="0"></circle>
+                        
+                        <!-- Segment 2: Standard - 40% -->
+                        <circle class="donut-segment" cx="100" cy="100" r="80" stroke="var(--success-color)"
+                                stroke-dasharray="251 377" stroke-dashoffset="-157"></circle>
+                        
+                        <!-- Segment 3: Basic - 35% -->
+                        <circle class="donut-segment" cx="100" cy="100" r="80" stroke="var(--warning-color)"
+                                stroke-dasharray="220 408" stroke-dashoffset="-408"></circle>
+                        
+                        <!-- Center Text -->
+                        <text class="donut-label" x="100" y="95">4.2%</text>
+                        <text class="donut-sublabel" x="100" y="115">Avg. Churn Rate</text>
+                    </svg>
+                </div>
+                
+                <table class="segment-table">
+                    <thead>
+                        <tr>
+                            <th>Segment</th>
+                            <th>Churn Rate</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>
+                                <span class="segment-color" style="background-color: var(--accent-color);"></span>
+                                Premium Users
+                            </td>
+                            <td class="segment-value">2.1%</td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <span class="segment-color" style="background-color: var(--success-color);"></span>
+                                Standard Users
+                            </td>
+                            <td class="segment-value">3.8%</td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <span class="segment-color" style="background-color: var(--warning-color);"></span>
+                                Basic Users
+                            </td>
+                            <td class="segment-value">6.7%</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Navigation Bar -->
+        <div class="nav-bar">
+            <div class="nav-item active">
+                <svg viewBox="0 0 24 24">
+                    <path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/>
+                </svg>
+                <span>Dashboard</span>
+            </div>
+            
+            <div class="nav-item">
+                <svg viewBox="0 0 24 24">
+                    <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zM7 10h2v7H7zm4-3h2v10h-2zm4 6h2v4h-2z"/>
+                </svg>
+                <span>Reports</span>
+            </div>
+            
+            <div class="nav-item">
+                <svg viewBox="0 0 24 24">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
+                </svg>
+                <span>Insights</span>
+            </div>
+            
+            <div class="nav-item">
+                <svg viewBox="0 0 24 24">
+                    <path d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z"/>
+                </svg>
+                <span>Settings</span>
+            </div>
+        </div>
+        
+        <!-- Churn Trend Detail Modal -->
+        <div class="modal" id="churnTrendModal">
+            <div class="modal-header">
+                <div class="modal-title">Churn Rate Trend</div>
+                <button class="close-btn" onclick="closeModal()">&times;</button>
+            </div>
+            
+            <div class="modal-content">
+                <div class="filter-section">
+                    <div class="filter-chip active">Last 30 Days</div>
+                    <div class="filter-chip">Last Quarter</div>
+                    <div class="filter-chip">Last Year</div>
+                    <div class="filter-chip">Custom Range</div>
+                </div>
+                
+                <div class="detail-chart-container">
+                    <svg class="line-chart" viewBox="0 0 340 250" preserveAspectRatio="none">
+                        <!-- Grid Lines -->
+                        <line class="grid-line" x1="0" y1="0" x2="340" y2="0"></line>
+                        <line class="grid-line" x1="0" y1="50" x2="340" y2="50"></line>
+                        <line class="grid-line" x1="0" y1="100" x2="340" y2="100"></line>
+                        <line class="grid-line" x1="0" y1="150" x2="340" y2="150"></line>
+                        <line class="grid-line" x1="0" y1="200" x2="340" y2="200"></line>
+                        <line class="grid-line" x1="0" y1="250" x2="340" y2="250"></line>
+                        
+                        <!-- X-Axis Labels -->
+                        <text class="axis-label" x="0" y="245">Apr 1</text>
+                        <text class="axis-label" x="34" y="245">Apr 4</text>
+                        <text class="axis-label" x="68" y="245">Apr 7</text>
+                        <text class="axis-label" x="102" y="245">Apr 10</text>
+                        <text class="axis-label" x="136" y="245">Apr 13</text>
+                        <text class="axis-label" x="170" y="245">Apr 16</text>
+                        <text class="axis-label" x="204" y="245">Apr 19</text>
+                        <text class="axis-label" x="238" y="245">Apr 22</text>
+                        <text class="axis-label" x="272" y="245">Apr 25</text>
+                        <text class="axis-label" x="306" y="245">Apr 28</text>
+                        <text class="axis-label" x="340" y="245" text-anchor="end">Apr 30</text>
+                        
+                        <!-- Y-Axis Labels -->
+                        <text class="axis-label" x="20" y="10">6%</text>
+                        <text class="axis-label" x="20" y="60">5.5%</text>
+                        <text class="axis-label" x="20" y="110">5%</text>
+                        <text class="axis-label" x="20" y="160">4.5%</text>
+                        <text class="axis-label" x="20" y="210">4%</text>
+                        
+                        <!-- Actual Churn Line -->
+                        <path class="data-line" stroke="var(--danger-color)" d="M0,170 L34,160 L68,180 L102,175 L136,165 L170,155 L204,150 L238,140 L272,135 L306,130 L340,125"></path>
+                        
+                        <!-- Predicted Churn Line -->
+                        <path class="data-line" stroke="var(--warning-color)" d="M0,175 L34,165 L68,185 L102,180 L136,170 L170,160 L204,155 L238,145 L272,140 L306,135 L340,130"></path>
+                        
+                        <!-- Data Points for Actual -->
+                        <circle class="data-point" cx="0" cy="170" r="4" stroke="var(--danger-color)"></circle>
+                        <circle class="data-point" cx="34" cy="160" r="4" stroke="var(--danger-color)"></circle>
+                        <circle class="data-point" cx="68" cy="180" r="4" stroke="var(--danger-color)"></circle>
+                        <circle class="data-point" cx="102" cy="175" r="4" stroke="var(--danger-color)"></circle>
+                        <circle class="data-point" cx="136" cy="165" r="4" stroke="var(--danger-color)"></circle>
+                        <circle class="data-point" cx="170" cy="155" r="4" stroke="var(--danger-color)"></circle>
+                        <circle class="data-point" cx="204" cy="150" r="4" stroke="var(--danger-color)"></circle>
+                        <circle class="data-point" cx="238" cy="140" r="4" stroke="var(--danger-color)"></circle>
+                        <circle class="data-point" cx="272" cy="135" r="4" stroke="var(--danger-color)"></circle>
+                        <circle class="data-point" cx="306" cy="130" r="4" stroke="var(--danger-color)"></circle>
+                        <circle class="data-point" cx="340" cy="125" r="4" stroke="var(--danger-color)"></circle>
+                    </svg>
+                </div>
+                
+                <table class="detail-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Actual</th>
+                            <th>Predicted</th>
+                            <th>Accuracy</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Apr 30</td>
+                            <td class="value-cell">4.1%</td>
+                            <td class="value-cell">4.2%</td>
+                            <td class="value-cell">97.6%</td>
+                        </tr>
+                        <tr>
+                            <td>Apr 25</td>
+                            <td class="value-cell">4.3%</td>
+                            <td class="value-cell">4.4%</td>
+                            <td class="value-cell">97.7%</td>
+                        </tr>
+                        <tr>
+                            <td>Apr 20</td>
+                            <td class="value-cell">4.5%</td>
+                            <td class="value-cell">4.6%</td>
+                            <td class="value-cell">97.8%</td>
+                        </tr>
+                        <tr>
+                            <td>Apr 15</td>
+                            <td class="value-cell">4.7%</td>
+                            <td class="value-cell">4.8%</td>
+                            <td class="value-cell">97.9%</td>
+                        </tr>
+                        <tr>
+                            <td>Apr 10</td>
+                            <td class="value-cell">4.9%</td>
+                            <td class="value-cell">5.0%</td>
+                            <td class="value-cell">98.0%</td>
+                        </tr>
+                        <tr>
+                            <td>Apr 5</td>
+                            <td class="value-cell">5.1%</td>
+                            <td class="value-cell">5.2%</td>
+                            <td class="value-cell">98.1%</td>
+                        </tr>
+                        <tr>
+                            <td>Apr 1</td>
+                            <td class="value-cell">5.3%</td>
+                            <td class="value-cell">5.4%</td>
+                            <td class="value-cell">98.1%</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Personalization Detail Modal -->
+        <div class="modal" id="personalizationModal">
+            <div class="modal-header">
+                <div class="modal-title">Personalization Effectiveness</div>
+                <button class="close-btn" onclick="closeModal()">&times;</button>
+            </div>
+            
+            <div class="modal-content">
+                <div class="filter-section">
+                    <div class="filter-chip active">All Users</div>
+                    <div class="filter-chip">Premium</div>
+                    <div class="filter-chip">Standard</div>
+                    <div class="filter-chip">Basic</div>
+                </div>
+                
+                <div class="detail-chart-container">
+                    <svg class="bar-chart" viewBox="0 0 340 250" preserveAspectRatio="none">
+                        <!-- Grid Lines -->
+                        <line class="grid-line" x1="0" y1="0" x2="340" y2="0"></line>
+                        <line class="grid-line" x1="0" y1="50" x2="340" y2="50"></line>
+                        <line class="grid-line" x1="0" y1="100" x2="340" y2="100"></line>
+                        <line class="grid-line" x1="0" y1="150" x2="340" y2="150"></line>
+                        <line class="grid-line" x1="0" y1="200" x2="340" y2="200"></line>
+                        <line class="grid-line" x1="0" y1="250" x2="340" y2="250"></line>
+                        
+                        <!-- Y-Axis Labels -->
+                        <text class="axis-label" x="25" y="10">100%</text>
+                        <text class="axis-label" x="25" y="60">80%</text>
+                        <text class="axis-label" x="25" y="110">60%</text>
+                        <text class="axis-label" x="25" y="160">40%</text>
+                        <text class="axis-label" x="25" y="210">20%</text>
+                        
+                        <!-- Bars -->
+                        <rect class="bar" x="50" y="100" width="40" height="150" fill="var(--accent-color)"></rect>
+                        <rect class="bar" x="120" y="150" width="40" height="100" fill="var(--accent-color)"></rect>
+                        <rect class="bar" x="190" y="50" width="40" height="200" fill="var(--accent-color)"></rect>
+                        <rect class="bar" x="260" y="125" width="40" height="125" fill="var(--accent-color)"></rect>
+                        
+                        <!-- X-Axis Labels -->
+                        <text class="axis-label" x="70" y="245" text-anchor="middle">CTR</text>
+                        <text class="axis-label" x="140" y="245" text-anchor="middle">Conversion</text>
+                        <text class="axis-label" x="210" y="245" text-anchor="middle">Satisfaction</text>
+                        <text class="axis-label" x="280" y="245" text-anchor="middle">Engagement</text>
+                    </svg>
+                </div>
+                
+                <table class="detail-table">
+                    <thead>
+                        <tr>
+                            <th>Metric</th>
+                            <th>Value</th>
+                            <th>Trend</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Click-Through Rate</td>
+                            <td class="value-cell">42.3%</td>
+                            <td class="trend-cell trend-positive">+3.2%</td>
+                        </tr>
+                        <tr>
+                            <td>Conversion Rate</td>
+                            <td class="value-cell">28.7%</td>
+                            <td class="trend-cell trend-positive">+1.5%</td>
+                        </tr>
+                        <tr>
+                            <td>Satisfaction Rating</td>
+                            <td class="value-cell">4.2/5</td>
+                            <td class="trend-cell trend-positive">+0.3</td>
+                        </tr>
+                        <tr>
+                            <td>Engagement Lift</td>
+                            <td class="value-cell">35.1%</td>
+                            <td class="trend-cell trend-positive">+2.8%</td>
+                        </tr>
+                        <tr>
+                            <td>Avg. Watch Time</td>
+                            <td class="value-cell">68 min</td>
+                            <td class="trend-cell trend-positive">+7 min</td>
+                        </tr>
+                        <tr>
+                            <td>Recommendation Relevance</td>
+                            <td class="value-cell">78.4%</td>
+                            <td class="trend-cell trend-positive">+4.1%</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Segmentation Detail Modal -->
+        <div class="modal" id="segmentationModal">
+            <div class="modal-header">
+                <div class="modal-title">Churn by User Segment</div>
+                <button class="close-btn" onclick="closeModal()">&times;</button>
+            </div>
+            
+            <div class="modal-content">
+                <div class="filter-section">
+                    <div class="filter-chip active">Subscription Type</div>
+                    <div class="filter-chip">Age Group</div>
+                    <div class="filter-chip">Device Type</div>
+                    <div class="filter-chip">Region</div>
+                </div>
+                
+                <div class="detail-chart-container">
+                    <svg class="bar-chart" viewBox="0 0 340 250" preserveAspectRatio="none">
+                        <!-- Grid Lines -->
+                        <line class="grid-line" x1="0" y1="0" x2="340" y2="0"></line>
+                        <line class="grid-line" x1="0" y1="50" x2="340" y2="50"></line>
+                        <line class="grid-line" x1="0" y1="100" x2="340" y2="100"></line>
+                        <line class="grid-line" x1="0" y1="150" x2="340" y2="150"></line>
+                        <line class="grid-line" x1="0" y1="200" x2="340" y2="200"></line>
+                        <line class="grid-line" x1="0" y1="250" x2="340" y2="250"></line>
+                        
+                        <!-- Y-Axis Labels -->
+                        <text class="axis-label" x="25" y="10">8%</text>
+                        <text class="axis-label" x="25" y="60">6%</text>
+                        <text class="axis-label" x="25" y="110">4%</text>
+                        <text class="axis-label" x="25" y="160">2%</text>
+                        <text class="axis-label" x="25" y="210">0%</text>
+                        
+                        <!-- Bars -->
+                        <rect class="bar" x="85" y="175" width="40" height="75" fill="var(--accent-color)"></rect>
+                        <rect class="bar" x="170" y="125" width="40" height="125" fill="var(--success-color)"></rect>
+                        <rect class="bar" x="255" y="75" width="40" height="175" fill="var(--warning-color)"></rect>
+                        
+                        <!-- X-Axis Labels -->
+                        <text class="axis-label" x="105" y="245" text-anchor="middle">Premium</text>
+                        <text class="axis-label" x="190" y="245" text-anchor="middle">Standard</text>
+                        <text class="axis-label" x="275" y="245" text-anchor="middle">Basic</text>
+                    </svg>
+                </div>
+                
+                <table class="detail-table">
+                    <thead>
+                        <tr>
+                            <th>Segment</th>
+                            <th>Churn Rate</th>
+                            <th>Users</th>
+                            <th>Trend</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Premium Users</td>
+                            <td class="value-cell">2.1%</td>
+                            <td class="value-cell">1.2M</td>
+                            <td class="trend-cell trend-positive">-0.4%</td>
+                        </tr>
+                        <tr>
+                            <td>Standard Users</td>
+                            <td class="value-cell">3.8%</td>
+                            <td class="value-cell">3.5M</td>
+                            <td class="trend-cell trend-positive">-0.2%</td>
+                        </tr>
+                        <tr>
+                            <td>Basic Users</td>
+                            <td class="value-cell">6.7%</td>
+                            <td class="value-cell">2.8M</td>
+                            <td class="trend-cell trend-negative">+0.3%</td>
+                        </tr>
+                    </tbody>
+                </table>
+                
+                <div class="chart-card" style="margin-top: 20px;">
+                    <div class="chart-header">
+                        <div class="chart-title">Churn Risk Factors</div>
+                    </div>
+                    
+                    <table class="detail-table">
+                        <thead>
+                            <tr>
+                                <th>Factor</th>
+                                <th>Impact</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Low Engagement (< 1hr/week)</td>
+                                <td class="value-cell">High</td>
+                            </tr>
+                            <tr>
+                                <td>Content Exhaustion</td>
+                                <td class="value-cell">Medium</td>
+                            </tr>
+                            <tr>
+                                <td>Technical Issues</td>
+                                <td class="value-cell">Medium</td>
+                            </tr>
+                            <tr>
+                                <td>Payment Issues</td>
+                                <td class="value-cell">High</td>
+                            </tr>
+                            <tr>
+                                <td>Competitor Offers</td>
+                                <td class="value-cell">Medium</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        function openModal(id) {
+            document.getElementById(id + 'Modal').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+        
+        function closeModal() {
+            document.querySelectorAll('.modal').forEach(modal => {
+                modal.classList.remove('active');
+            });
+            document.body.style.overflow = 'auto';
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StreamFlix - Streaming App Prototype</title>
+    <style>
+        :root {
+            --primary-bg: #121212;
+            --secondary-bg: #1f1f1f;
+            --accent-color: #e50914;
+            --text-primary: #ffffff;
+            --text-secondary: #b3b3b3;
+            --card-bg: #2a2a2a;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+        }
+        
+        body {
+            background-color: var(--primary-bg);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+        
+        .container {
+            max-width: 800px;
+            width: 100%;
+            text-align: center;
+        }
+        
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            color: var(--accent-color);
+        }
+        
+        p {
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+            margin-bottom: 3rem;
+            line-height: 1.6;
+        }
+        
+        .buttons {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            flex-wrap: wrap;
+        }
+        
+        .button {
+            display: inline-block;
+            background-color: var(--card-bg);
+            color: var(--text-primary);
+            padding: 1.5rem 2.5rem;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 1.2rem;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+            min-width: 250px;
+        }
+        
+        .button:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+            border-color: var(--accent-color);
+        }
+        
+        .button.primary {
+            background-color: var(--accent-color);
+        }
+        
+        .button.primary:hover {
+            background-color: #f40612;
+            border-color: transparent;
+        }
+        
+        footer {
+            margin-top: 5rem;
+            color: var(--text-secondary);
+        }
+        
+        footer a {
+            color: var(--accent-color);
+            text-decoration: none;
+        }
+        
+        footer a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>StreamFlix Prototype</h1>
+        <p>This is a prototype streaming application that demonstrates user interface design and analytics visualization for a streaming platform. The prototype includes a client app with personalized content recommendations and an analytics dashboard for monitoring user engagement.</p>
+        
+        <div class="buttons">
+            <a href="streaming_app_client.html" class="button primary">Streaming App Client</a>
+            <a href="streaming_analytics_dashboard.html" class="button">Analytics Dashboard</a>
+        </div>
+        
+        <footer>
+            <p>&copy; 2023 StreamFlix Prototype | <a href="LICENSE">MIT License</a></p>
+        </footer>
+    </div>
+</body>
+</html>
